@@ -19,6 +19,7 @@
   "build": {
     "appId": "com.ifvip.app",
     "productName": "IF-VIP",
+    "publish": "never",
     "directories": {
       "output": "dist"
     },

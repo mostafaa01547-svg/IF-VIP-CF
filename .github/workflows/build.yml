@@ -21,7 +21,7 @@ jobs:
         run: |
           cd if-vip-main/Client
           npm install
-          npm run dist
+          npx electron-builder --win -c.publish=never
 
       - name: Upload Artifacts (.exe)
         uses: actions/upload-artifact@v4

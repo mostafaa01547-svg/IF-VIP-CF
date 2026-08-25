@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies and Build
         run: |
-          cd Client
+          cd if-vip-main/Client
           npm install
           npm run dist
 
@@ -27,4 +27,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: IF-VIP-App
-          path: Client/dist/*.exe
+          path: if-vip-main/Client/dist/*.exe

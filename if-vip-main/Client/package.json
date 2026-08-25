@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win -c.publish=never"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -19,7 +19,6 @@
   "build": {
     "appId": "com.ifvip.app",
     "productName": "IF-VIP",
-    "publish": "never",
     "directories": {
       "output": "dist"
     },

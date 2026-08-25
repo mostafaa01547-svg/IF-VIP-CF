@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IF-VIP — Welcome</title>
+    <link rel="stylesheet" href="../Assets/theme.css">
+    <style>
+        .welcome-actions { margin-top: 30px; display: flex; flex-direction: column; gap: 12px; }
+        .welcome-actions .btn-secondary { margin-top: 0; }
+        .brand-eyebrow {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--accent-purple);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+
+    <div class="auth-shell">
+        <div class="auth-card" style="text-align:center;">
+            <div class="brand-eyebrow">CrossFire Performance Suite</div>
+            <img src="../Assets/logo.png" alt="IF-VIP" class="if-logo" style="width:200px;">
+            <p class="tagline">Sensitivity tuning, aim training, and coaching tools to sharpen your mechanics — legitimately, on your own gear.</p>
+
+            <div class="welcome-actions">
+                <button class="btn-primary" id="loginBtn">LOGIN</button>
+                <button class="btn-secondary" id="signupBtn">CREATE ACCOUNT</button>
+            </div>
+
+            <div class="status-msg info" id="statusMsg">Checking your session...</div>
+        </div>
+    </div>
+
+    <div class="app-version-tag">IF-VIP v1.0.0</div>
+
+    <script src="session.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'login');
+        });
+        document.getElementById('signupBtn').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'signup');
+        });
+
+        // لو فيه جلسة محفوظة، بنتحقق منها أونلاين ونوجه المستخدم تلقائي بدل ما يضغط تاني
+        (async () => {
+            const statusMsg = document.getElementById('statusMsg');
+            try {
+                const result = await Session.resolveEntryScreen();
+                if (result.screen === 'welcome') {
+                    statusMsg.textContent = '';
+                    return;
+                }
+                statusMsg.textContent = 'Restoring your session...';
+                ipcRenderer.send('navigate', result.screen, result);
+            } catch (err) {
+                statusMsg.textContent = '';
+            }
+        })();
+    </script>
+</body>
+</html>

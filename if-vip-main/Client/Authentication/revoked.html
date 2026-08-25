@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IF-VIP — License Revoked</title>
+    <link rel="stylesheet" href="../Assets/theme.css">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card" style="text-align:center;">
+            <div class="center-icon-circle error">✕</div>
+            <h2 class="brand-title" style="color:var(--danger);">YOUR IF-VIP LICENSE HAS BEEN REVOKED</h2>
+            <p class="tagline">Premium functionality has been locked for this account.</p>
+
+            <button class="btn-primary" id="supportBtn">CONTACT SUPPORT</button>
+            <button class="btn-secondary" id="logoutBtn">LOG OUT</button>
+        </div>
+    </div>
+
+    <script src="session.js"></script>
+    <script>
+        const { ipcRenderer, shell } = require('electron');
+
+        document.getElementById('supportBtn').addEventListener('click', () => {
+            shell.openExternal('mailto:support@if-vip.app');
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            Session.clear();
+            ipcRenderer.send('navigate', 'login');
+        });
+    </script>
+</body>
+</html>

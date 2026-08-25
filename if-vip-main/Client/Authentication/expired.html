@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IF-VIP — License Expired</title>
+    <link rel="stylesheet" href="../Assets/theme.css">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card" style="text-align:center;">
+            <div class="center-icon-circle error">!</div>
+            <h2 class="brand-title" style="color:var(--danger);">YOUR IF-VIP LICENSE HAS EXPIRED</h2>
+
+            <div class="info-list" id="infoList"></div>
+
+            <button class="btn-primary" id="activateBtn">ACTIVATE NEW LICENSE</button>
+            <button class="btn-secondary" id="logoutBtn">LOG OUT</button>
+        </div>
+    </div>
+
+    <script src="session.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+        const params = window.ifvipNavParams || {};
+        const license = (params.license) || {};
+
+        const rows = [
+            ['License Type', license.type || '—'],
+            ['Expired', license.expiresAt ? new Date(license.expiresAt).toLocaleDateString() : '—']
+        ];
+        document.getElementById('infoList').innerHTML = rows.map(([k, v]) =>
+            `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`
+        ).join('');
+
+        document.getElementById('activateBtn').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'activation');
+        });
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            Session.clear();
+            ipcRenderer.send('navigate', 'login');
+        });
+    </script>
+</body>
+</html>

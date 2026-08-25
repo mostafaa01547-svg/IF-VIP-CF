@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IF-VIP — Activation</title>
+    <link rel="stylesheet" href="../Assets/theme.css">
+    <style>
+        #licenseKey { text-transform: uppercase; letter-spacing: 1.5px; }
+    </style>
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card">
+            <img src="../Assets/logo.png" alt="IF-VIP" class="if-logo" style="width:150px;">
+            <h2 class="brand-title">IF-VIP ACTIVATION</h2>
+            <p class="tagline">Activate your IF-VIP license to continue.</p>
+
+            <form id="activationForm">
+                <div class="field">
+                    <label for="licenseKey">Enter Activation Code</label>
+                    <input type="text" id="licenseKey" placeholder="IFVIP-XXXX-XXXX-XXXX" required>
+                </div>
+                <button type="submit" class="btn-primary" id="submitBtn">ACTIVATE</button>
+                <button type="button" class="btn-secondary" id="buyBtn">BUY LICENSE</button>
+            </form>
+
+            <div class="link-row" style="justify-content:center;">
+                <a id="logoutBtn">Log out</a>
+            </div>
+
+            <div class="status-msg" id="statusMsg"></div>
+        </div>
+    </div>
+
+    <script src="session.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.getElementById('buyBtn').addEventListener('click', () => {
+            require('electron').shell.openExternal('https://example.com/if-vip/buy');
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            Session.clear();
+            ipcRenderer.send('navigate', 'login');
+        });
+
+        document.getElementById('activationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const licenseKey = document.getElementById('licenseKey').value.trim();
+            const statusMsg = document.getElementById('statusMsg');
+            const submitBtn = document.getElementById('submitBtn');
+
+            submitBtn.disabled = true;
+            statusMsg.textContent = 'Verifying activation code...';
+            statusMsg.className = 'status-msg info';
+
+            try {
+                const result = await Session.authFetch('/license/activate', {
+                    method: 'POST',
+                    body: JSON.stringify({ licenseKey })
+                });
+
+                if (result.ok) {
+                    statusMsg.textContent = 'IF-VIP activated successfully!';
+                    statusMsg.className = 'status-msg success';
+                    setTimeout(() => {
+                        ipcRenderer.send('navigate', 'activation-success', { license: result.data.license });
+                    }, 700);
+                } else if (result.status === 401) {
+                    statusMsg.textContent = 'Your session has expired. Please log in again.';
+                    statusMsg.className = 'status-msg error';
+                    Session.clear();
+                    setTimeout(() => ipcRenderer.send('navigate', 'login', { reason: 'session-expired' }), 1200);
+                } else if (result.status === 429) {
+                    statusMsg.textContent = 'Too many attempts. Please wait and try again.';
+                    statusMsg.className = 'status-msg error';
+                    submitBtn.disabled = false;
+                } else {
+                    statusMsg.textContent = (result.data && result.data.message) || 'Invalid activation code.';
+                    statusMsg.className = 'status-msg error';
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                statusMsg.textContent = 'Cannot connect to IF-VIP server.';
+                statusMsg.className = 'status-msg error';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

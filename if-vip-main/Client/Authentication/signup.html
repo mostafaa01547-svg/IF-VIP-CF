@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IF-VIP — Sign Up</title>
+    <link rel="stylesheet" href="../Assets/theme.css">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card">
+            <img src="../Assets/logo.png" alt="IF-VIP" class="if-logo" style="width:150px;">
+            <h2 class="brand-title">CREATE ACCOUNT</h2>
+            <p class="tagline">Join IF-VIP and start training</p>
+
+            <form id="signupForm">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required autocomplete="username">
+                </div>
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required autocomplete="email">
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required autocomplete="new-password">
+                    <span class="toggle-visibility" data-target="password">SHOW</span>
+                </div>
+                <div class="field">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" required autocomplete="new-password">
+                    <span class="toggle-visibility" data-target="confirmPassword">SHOW</span>
+                </div>
+
+                <button type="submit" class="btn-primary" id="submitBtn">CREATE ACCOUNT</button>
+                <button type="button" class="btn-secondary" id="backBtn">BACK TO LOGIN</button>
+            </form>
+
+            <div class="status-msg" id="statusMsg"></div>
+        </div>
+    </div>
+
+    <script src="session.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        document.querySelectorAll('.toggle-visibility').forEach(el => {
+            el.addEventListener('click', () => {
+                const input = document.getElementById(el.dataset.target);
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                el.textContent = show ? 'HIDE' : 'SHOW';
+            });
+        });
+
+        document.getElementById('backBtn').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'login');
+        });
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const statusMsg = document.getElementById('statusMsg');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (!username) { statusMsg.textContent = 'Username cannot be empty.'; statusMsg.className = 'status-msg error'; return; }
+            if (password !== confirmPassword) { statusMsg.textContent = 'Passwords do not match.'; statusMsg.className = 'status-msg error'; return; }
+            if (password.length < 8) { statusMsg.textContent = 'Password must be at least 8 characters.'; statusMsg.className = 'status-msg error'; return; }
+
+            submitBtn.disabled = true;
+            statusMsg.textContent = 'Creating your account...';
+            statusMsg.className = 'status-msg info';
+
+            try {
+                const res = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, confirmPassword })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    statusMsg.textContent = 'Account created successfully. Please log in.';
+                    statusMsg.className = 'status-msg success';
+                    setTimeout(() => ipcRenderer.send('navigate', 'login', { registered: true }), 1200);
+                } else {
+                    statusMsg.textContent = data.message || 'Registration failed.';
+                    statusMsg.className = 'status-msg error';
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                statusMsg.textContent = 'Cannot connect to IF-VIP server.';
+                statusMsg.className = 'status-msg error';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

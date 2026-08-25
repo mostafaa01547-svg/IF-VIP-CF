@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IF-VIP — Login</title>
+    <link rel="stylesheet" href="../Assets/theme.css">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card">
+            <img src="../Assets/logo.png" alt="IF-VIP" class="if-logo" style="width:150px;">
+            <h2 class="brand-title">IF-VIP LOGIN</h2>
+            <p class="tagline" id="topMessage"></p>
+
+            <form id="loginForm">
+                <div class="field">
+                    <label for="identifier">Username or Email</label>
+                    <input type="text" id="identifier" required autocomplete="username">
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                    <span class="toggle-visibility" data-target="password">SHOW</span>
+                </div>
+
+                <div class="remember-row">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe" style="margin:0;">Remember me</label>
+                </div>
+
+                <button type="submit" class="btn-primary" id="submitBtn">LOGIN</button>
+                <button type="button" class="btn-secondary" id="signupBtn">SIGN UP</button>
+            </form>
+
+            <div class="link-row">
+                <a id="forgotBtn">Forgot Password?</a>
+            </div>
+
+            <div class="status-msg" id="statusMsg"></div>
+        </div>
+    </div>
+
+    <script src="session.js"></script>
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // لو جاي من صفحة الساين اب أو من سيشن منتهية، نعرض رسالة مناسبة
+        const params = window.ifvipNavParams || {};
+        const topMessage = document.getElementById('topMessage');
+        if (params.registered) {
+            topMessage.textContent = 'Account created successfully. Please log in.';
+        } else if (params.reason === 'session-expired') {
+            topMessage.textContent = 'Your session has expired. Please log in again.';
+        }
+
+        document.querySelectorAll('.toggle-visibility').forEach(el => {
+            el.addEventListener('click', () => {
+                const input = document.getElementById(el.dataset.target);
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                el.textContent = show ? 'HIDE' : 'SHOW';
+            });
+        });
+
+        document.getElementById('signupBtn').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'signup');
+        });
+        document.getElementById('forgotBtn').addEventListener('click', () => {
+            ipcRenderer.send('navigate', 'forgot-password');
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const statusMsg = document.getElementById('statusMsg');
+            const submitBtn = document.getElementById('submitBtn');
+
+            submitBtn.disabled = true;
+            statusMsg.textContent = 'Connecting to server...';
+            statusMsg.className = 'status-msg info';
+
+            try {
+                const res = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    Session.setToken(data.token, rememberMe);
+                    Session.setUser(data.user);
+                    statusMsg.textContent = 'Login successful! Checking license...';
+                    statusMsg.className = 'status-msg success';
+
+                    // بعد اللوجين لازم نتأكد من حالة اللايسنس قبل ما نفتح أي حاجة تانية
+                    const result = await Session.resolveEntryScreen();
+                    ipcRenderer.send('navigate', result.screen, result);
+                } else {
+                    statusMsg.textContent = data.message || 'Login failed.';
+                    statusMsg.className = 'status-msg error';
+                    submitBtn.disabled = false;
+                }
+            } catch (err) {
+                statusMsg.textContent = 'Cannot connect to IF-VIP server.';
+                statusMsg.className = 'status-msg error';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
